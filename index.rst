@@ -15,7 +15,7 @@ Welcome to study's documentation!
    dev/index
    ide/index
    docker/index
-   prj/index
+   prj/index 
 
 
 Indices and tables
