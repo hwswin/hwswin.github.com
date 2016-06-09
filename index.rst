@@ -6,12 +6,16 @@
 Welcome to study's documentation!
 =================================
 
-Contents:
+主要内容:
 
 .. toctree::
    :maxdepth: 2
 
-   s
+   sphinx/index
+   dev/index
+   ide/index
+   docker/index
+   prj/index
 
 
 Indices and tables
