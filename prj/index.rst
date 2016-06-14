@@ -5,7 +5,7 @@
 .. contents::
    :local:
 
-odoo
+ODOO
 ==========   
 
 9.0
