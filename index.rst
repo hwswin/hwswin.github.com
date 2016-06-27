@@ -16,6 +16,7 @@
    dev/index
    ide/index
    docker/index
+   work/index
    prj/index
    others/index 
 
