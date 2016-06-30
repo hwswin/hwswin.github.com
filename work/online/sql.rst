@@ -267,6 +267,35 @@ SQL语句优化
     - 每页的平均可用字节数.....................: 1559.8
     - 平均页密度(满).....................: 80.73%
 
+* DBCC DBREINDEX
+
+.. code-block:: SQL
+
+    DBCC DBREINDEX('tf_pss_z')
+
+::
+
+    - 扫描页数................................: 49794
+    - 扫描区数..............................: 6225
+    - 区切换次数..............................: 6224
+    - 每个区的平均页数........................: 8.0
+    - 扫描密度 [最佳计数:实际计数].......: 100.00% [6225:6225]
+    - 逻辑扫描碎片 ..................: 0.00%
+    - 区扫描碎片 ..................: 72.32%
+    - 每页的平均可用字节数.....................: 6.2
+    - 平均页密度(满).....................: 99.92%
+
+相关解释
+::
+
+    扫描页数：如果你知道行的近似尺寸和表或索引里的行数，那么你可以估计出索引里的页数。看看扫描页数，如果明显比你估计的页数要高，说明存在内部碎片。
+    扫描扩展盘区数：用扫描页数除以8，四舍五入到下一个最高值。该值应该和DBCC SHOWCONTIG返回的扫描扩展盘区数一致。如果DBCC SHOWCONTIG返回的数高，说明存在外部碎片。碎片的严重程度依赖于刚才显示的值比估计值高多少。
+    每个扩展盘区上的平均页数：该数是扫描页数除以扫描扩展盘区数，一般是8。小于8说明有外部碎片。
+    扫描密度[最佳值：实际值]：DBCC SHOWCONTIG返回最有用的一个百分比。这是扩展盘区的最佳值和实际值的比率。该百分比应该尽可能靠近100%。低了则说明有外部碎片。
+    逻辑扫描碎片：无序页的百分比。该百分比应该在0%到10%之间，高了则说明有外部碎片。
+    扩展盘区扫描碎片：无序扩展盘区在扫描索引叶级页中所占的百分比。该百分比应该是0%，高了则说明有外部碎片。
+    每页上的平均可用字节数：所扫描的页上的平均可用字节数。越高说明有内部碎片，不过在你用这个数字决定是否有内部碎片之前，应该考虑fill factor（填充因子）。
+    平均页密度（完整）：每页上的平均可用字节数的百分比的相反数。低的百分比说明有内部碎片。
 
 
 优化流程总结
@@ -278,3 +307,109 @@ SQL语句优化
         #. 借助Excel处理各表与字段
     #. 比较
     #. 优化
+    #. ssss
+
+清空缓存
+--------------------
+
+.. code-block:: SQL
+
+    DBCC DROPCLEANBUFFERS
+    DBCC FREEPROCCACHE
+    DBCC FREESYSTEMCACHE( 'ALL' ) 
+    set statistics time on
+
+打开跟踪
+--------------------
+
+.. code-block:: SQL
+
+    DBCC TRACEON (3604)
+
+表索引情况
+--------------------
+
+.. code-block:: SQL
+
+    select a.index_id,b.name,avg_fragmentation_in_percent
+    from
+      sys.dm_db_indx_physical_stats(db_id(),object_id(N'tf_pss_z'),null,null,null) as a
+    join
+      sys.indexes as b
+    on
+      a.object_id=b.object_id 
+    and
+      a.index_id=b.index_id
+
+所有表索引情况
+--------------------
+
+.. code-block:: SQL
+
+    SELECT OBJECT_NAME(dt.object_id),
+            si.name,
+            dt.avg_fragmentation_in_percent,
+            dt.avg_page_space_used_in_percent
+    FROM
+        (SELECT object_id,
+            index_id,
+            avg_fragmentation_in_percent,
+            avg_page_space_used_in_percent
+            FROM    sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'DETAILED')
+            WHERE   index_id <> 0
+        ) AS dt --does not return information about heaps
+            INNER JOIN sys.indexes si
+                ON    si.object_id = dt.object_id
+                AND si.index_id  = dt.index_id
+
+所有表重组索引
+--------------------
+
+.. code-block:: SQL
+
+    DECLARE @name varchar(100)  
+      
+    DECLARE authors_cursor CURSOR FOR    
+    Select [name]   from sysobjects where xtype='u' order by id  
+      
+    OPEN authors_cursor  
+      
+    FETCH NEXT FROM authors_cursor  INTO @name  
+      
+    WHILE @@FETCH_STATUS = 0   
+    BEGIN      
+      
+       DBCC DBREINDEX (@name, '', 90)  
+      
+       FETCH NEXT FROM authors_cursor    
+       INTO @name   
+    END  
+      
+    deallocate authors_cursor  
+
+sqlcmd执行文件
+--------------------
+
+.. code-block:: SQL
+
+    sqlcmd -H localhost -E -i instawdwdb.sql
+
+SP2地址（索引超出了数组界限）
+------------
+
+    https://www.microsoft.com/zh-cn/download/details.aspx?id=30437
+
+数据库的读写分离
+--------------------
+
+    http://tech.it168.com/a2012/0110/1300/000001300144_1.shtml
+
+SQL SERVER 2008 利用发布订阅方式实现数据库同步
+--------------------
+
+    http://www.cnblogs.com/lxblog/archive/2012/11/08/2760650.html
+
+SQL压力测试
+--------------------
+
+    http://www.sqlstress.com/Overview.aspx
