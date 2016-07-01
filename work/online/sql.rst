@@ -395,7 +395,7 @@ sqlcmd执行文件
     sqlcmd -H localhost -E -i instawdwdb.sql
 
 SP2地址（索引超出了数组界限）
-------------
+--------------------------------------------
 
     https://www.microsoft.com/zh-cn/download/details.aspx?id=30437
 
@@ -405,7 +405,7 @@ SP2地址（索引超出了数组界限）
     http://tech.it168.com/a2012/0110/1300/000001300144_1.shtml
 
 SQL SERVER 2008 利用发布订阅方式实现数据库同步
---------------------
+-----------------------------------------------------------
 
     http://www.cnblogs.com/lxblog/archive/2012/11/08/2760650.html
 
