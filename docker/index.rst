@@ -181,3 +181,8 @@ installed dependencies
         sudo sed -i "s|EXTRA_ARGS='|EXTRA_ARGS='--registry-mirror=https://q9h4ikji.mirror.aliyuncs.com |g" /var/lib/boot2docker/profile
         exit
         docker-machine restart default
+
+    #.设置npm镜像源 
+
+        npm  config set registry http://registry.npm.taobao.org
+        npm install -g cnpm --registry=https://registry.npm.taobao.org
